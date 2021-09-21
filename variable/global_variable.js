@@ -3,11 +3,18 @@ Notes:
 chainlink is in decimal 8 according to their documents
 web3.eth.toWei('100', 'ether') equal to USD 100
 web3.utils.toWei('0.1', 'ether') equal to 0.1 chainlink token
+
+development using rinkeby keyhash and fee
+
 */
 const web3 = require('web3');
 
 module.exports = {
   networks: {
+    development: {
+      chainlink_randomness_keyhash: '0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311',
+      chainlink_randomness_fee: web3.utils.toWei('0.1', 'ether')
+    },
     rinkeby: {
       chainlink_price_feed_ETH_USD_address: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
       chainlink_randomness_link_token_address: '0x01BE23585060835E02B77ef475b0Cc51aA1e0709',
