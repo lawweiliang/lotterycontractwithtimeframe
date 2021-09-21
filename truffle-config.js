@@ -35,11 +35,5 @@ module.exports = {
     solc: {
       version: "pragma"
     },
-    /*    solc: {
-         version: "0.6"
-       },
-       solc: {
-         version: "0.8.7"
-       }, */
   },
 };
