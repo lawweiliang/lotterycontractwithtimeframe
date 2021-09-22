@@ -84,6 +84,10 @@ contract Lottery is VRFConsumerBase, Ownable {
     //Start the lottery
     // Set a timer for the lottery
     function lotteryStart() public onlyOwner {
+        // require(
+        //     LINK.balanceOf(address(this)) >= chainLinkFee,
+        //     "Require Error: Smart Contract Not enough LINK - fill contract with link token"
+        // );
         require(
             lotteryState == LotteryState.CLOSE,
             "Require Error: Current Lottery State is not clossing state"
@@ -91,6 +95,11 @@ contract Lottery is VRFConsumerBase, Ownable {
         lotteryState = LotteryState.START;
 
         emit LotteryStart(lotteryState, "Event: Starting Lottery");
+    }
+
+    //Testing
+    function getLinkBalance() public view returns (uint256) {
+        return LINK.balanceOf(address(this));
     }
 
     //Calculate the randomess, using chainlink method
@@ -121,10 +130,6 @@ contract Lottery is VRFConsumerBase, Ownable {
         lotteryEnd(_randomness);
     }
 
-    //End the lottery
-    //Close the lottery
-    //Find the winner
-    //Send him money
     function lotteryEnd(uint256 _randomNumber) internal {
         lotteryState = LotteryState.CLOSE;
         uint256 winnerIndex = _randomNumber % players.length;
@@ -151,11 +156,11 @@ contract Lottery is VRFConsumerBase, Ownable {
         return winnerHistory[_winnerAddress];
     }
 
-    function getWinnderAddress() public view returns (address[] memory) {
+    function getWinnerAddress() public view returns (address[] memory) {
         return winnerAddress;
     }
 
-    function getPlayer() public view returns (address payable[] memory) {
+    function getPlayers() public view returns (address payable[] memory) {
         return players;
     }
 }
