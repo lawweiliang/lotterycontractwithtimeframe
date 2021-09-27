@@ -34,7 +34,11 @@ contract Lottery is VRFConsumerBase, Ownable {
         string message
     );
     event LotteryStart(LotteryState _lotteryState, string _message);
-    event LotteryFindingWinner(LotteryState _lotteryState, string _message);
+    event LotteryFindingWinner(
+        LotteryState _lotteryState,
+        string _message,
+        bytes32 _requestId
+    );
     event LotteryClose(LotteryState _lotteryState, string _message);
 
     constructor(
@@ -84,10 +88,10 @@ contract Lottery is VRFConsumerBase, Ownable {
     //Start the lottery
     // Set a timer for the lottery
     function lotteryStart() public onlyOwner {
-        // require(
-        //     LINK.balanceOf(address(this)) >= chainLinkFee,
-        //     "Require Error: Smart Contract Not enough LINK - fill contract with link token"
-        // );
+        require(
+            LINK.balanceOf(address(this)) >= chainLinkFee,
+            "Require Error: Smart Contract Not enough LINK - fill contract with link token"
+        );
         require(
             lotteryState == LotteryState.CLOSE,
             "Require Error: Current Lottery State is not clossing state"
@@ -97,24 +101,37 @@ contract Lottery is VRFConsumerBase, Ownable {
         emit LotteryStart(lotteryState, "Event: Starting Lottery");
     }
 
-    //Testing
+    //Test
     function getLinkBalance() public view returns (uint256) {
         return LINK.balanceOf(address(this));
     }
 
+    function getChainLinkFee() public view returns (uint256) {
+        return chainLinkFee;
+    }
+
+    function returnLinkToken(address _receiver) public {
+        LINK.transferFrom(
+            address(this),
+            _receiver,
+            LINK.balanceOf(address(this))
+        );
+    }
+
     //Calculate the randomess, using chainlink method
-    function calculateRandomNumber()
-        public
-        onlyOwner
-        returns (bytes32 requestId)
-    {
+    function calculateRandomNumber() public onlyOwner returns (bytes32) {
         require(
             LINK.balanceOf(address(this)) >= chainLinkFee,
             "Require Error: Smart Contract Not enough LINK - fill contract with link token"
         );
         lotteryState = LotteryState.FINDING_WINNER;
-        emit LotteryFindingWinner(lotteryState, "Event: End Lottery");
-        return requestRandomness(chainLinkKeyHash, chainLinkFee);
+        bytes32 requestId = requestRandomness(chainLinkKeyHash, chainLinkFee);
+        emit LotteryFindingWinner(
+            lotteryState,
+            "Event: End Lottery",
+            requestId
+        );
+        return requestId;
     }
 
     //chainlink callback function (compulsory)

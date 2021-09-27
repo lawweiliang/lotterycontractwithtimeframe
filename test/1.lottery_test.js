@@ -1,5 +1,4 @@
 const { BN, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
-const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const globalVar = require('../variable/global_variable.js');
 
 const MockV3Aggregator = artifacts.require('MockV3Aggregator');
@@ -11,12 +10,13 @@ contract('Lottery', ([alice, bob, ali, admin]) => {
 
   let lotteryInstance;
   let linkTokenInstance;
+  let VRFCoordinatorMockInstance;
   beforeEach(async () => {
     const chainLinkPriceFeedInstance = await MockV3Aggregator.new(globalVar.chainlink.ETHUSD.decimal, globalVar.chainlink.ETHUSD.price);
     linkTokenInstance = await LinkToken.new();
-    const VRFCoordinatorMockInstance = await VRFCoordinatorMock.new(linkTokenInstance.address);
+    VRFCoordinatorMockInstance = await VRFCoordinatorMock.new(linkTokenInstance.address);
 
-    lotteryInstance = await Lottery.new(chainLinkPriceFeedInstance.address, linkTokenInstance.address, VRFCoordinatorMockInstance.address, globalVar.networks.development.chainlink_randomness_fee, globalVar.networks.development.chainlink_randomness_keyhash);
+    lotteryInstance = await Lottery.new(chainLinkPriceFeedInstance.address, VRFCoordinatorMockInstance.address, linkTokenInstance.address, globalVar.networks.development.chainlink_randomness_fee, globalVar.networks.development.chainlink_randomness_keyhash);
 
     //Transfer at least 0.1 link to the smart contract
     await linkTokenInstance.transfer(lotteryInstance.address, web3.utils.toWei('1', 'ether'));
@@ -66,21 +66,49 @@ contract('Lottery', ([alice, bob, ali, admin]) => {
   });
 
 
-
   describe('lotteryStart function test', () => {
+
+    /*     it.only('lotteryStart test - not enough link', async () => {
+    
+    
+          // await linkTokenInstance.approve(alice, 1000, { from: bob });
+          // await linkTokenInstance.transfer(alice, 1000);
+          // await linkTokenInstance.transfer(bob, 1000);
+          // await linkTokenInstance.transferFrom(bob, alice, 1000, { from: alice });
+    
+          // const balance = await linkTokenInstance.balanceOf(bob);
+          // console.log('balance', balance.toString());
+    
+    
+          // await linkTokenInstance.approve(alice, web3.utils.toWei('1', 'ether'), { from: alice });
+          // await linkTokenInstance.transferFrom(lotteryInstance.address, alice, web3.utils.toWei('1', 'ether'), { from: alice });
+    
+          // await linkTokenInstance.approve(alice, 1000);
+          // await lotteryInstance.returnLinkToken(alice);
+          // const balance = await linkTokenInstance.balanceOf(alice);
+          // console.log('balance', balance.toString());
+    
+    
+          // await linkTokenInstance.transferFrom(lotteryInstance.address, alice, web3.utils.toWei('1', 'ether'), { from: alice });
+          // expectRevert(lotteryInstance.lotteryStart(), 'Require Error: Smart Contract Not enough LINK - fill contract with link token');
+          // const linkBalance = await lotteryInstance.getLinkBalance();
+          // console.log('linkBalance', linkBalance.toString());
+          // const chainLinkFee = await lotteryInstance.getChainLinkFee();
+          // console.log('chainLinkFee', chainLinkFee.toString());
+    
+        }); */
+
+
     it('lotteryStart test - revert', async () => {
       await lotteryInstance.lotteryStart();
       expectRevert(lotteryInstance.lotteryStart(), 'Require Error: Current Lottery State is not clossing state');
     });
 
-    it.only('lotteryStart test - event', async () => {
+    it('lotteryStart test - event', async () => {
       const lotteryReceipt = await lotteryInstance.lotteryStart();
-      console.log('lotteryReceipt', lotteryReceipt.log);
-      expectEvent(lotteryReceipt, 'LotteryStart', { lotteryState: 1, message: 'Event: Starting Lottery' });
+      expectEvent(lotteryReceipt, 'LotteryStart', { _lotteryState: '0', _message: 'Event: Starting Lottery' });
     });
   });
-
-
 
 
   describe('Game Start', () => {
@@ -89,42 +117,31 @@ contract('Lottery', ([alice, bob, ali, admin]) => {
       await lotteryInstance.buyLotteryTicket({ from: alice, value: web3.utils.toWei('1', "ether") });
       await lotteryInstance.buyLotteryTicket({ from: bob, value: web3.utils.toWei('1', "ether") });
 
-      // await lotteryInstance.calculateRandomNumber();
-
-      const linkBalance = await lotteryInstance.getLinkBalance();
-      console.log('linkBalance', linkBalance);
-
+      //Manually generate the random number;
+      const receipt = await lotteryInstance.calculateRandomNumber();
+      const requestId = receipt.logs[0].args._requestId;
+      const randomness = 777;
+      await VRFCoordinatorMockInstance.callBackWithRandomness(requestId, randomness, lotteryInstance.address);
 
     });
 
-    it('Lottery Contract Balance', async () => {
-      const balance = await web3.eth.getBalance(lotteryInstance.address);
-      console.log('balance', balance);
-      assert.equal(balance, web3.utils.toWei('2', 'ether'));
+    it('getWinnerAmount function test', async () => {
+      const balance = await lotteryInstance.getWinnerAmount(bob);
+      assert.equal(balance.toString(), web3.utils.toWei('2', 'ether'));
     });
 
-    // it.only('getWinnerAmount function test', async () => {
-    //   const balance = await lotteryInstance.getWinnerAmount(alice);
-    //   assert.equal(balance.toString(), web3.utils.toWei('2', 'ether'));
-    // });
-
-    // it('getWinnerAddress', async () => {
-    //   const winnerAddress = await lotteryInstance.getWinnerAddress();
-    //   console.log('winnderAddress', winnerAddress);
-    //   assert(winnerAddress in [alice, bob]);
-    // });
-
+    it('getWinnerAddress function test', async () => {
+      const winner = await lotteryInstance.getWinnerAddress();
+      assert.equal(winner[winner.length - 1], bob);
+    })
   });
-
-
 
 });
 
 
 //Todo: Test all the solidity function in Lottery folder
 //Todo: Add the timer for the lottery start and end. 
-//Todo: Solidity Link token address is not functioning. 
-//Todo: Tmr continue lotterystart function. 
+//Todo: Receive and return token from smart contract
 
 // 1 week 4 lottery
 // Auto start, auto end and auto processing the winner

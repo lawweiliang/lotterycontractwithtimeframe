@@ -38,7 +38,6 @@ module.exports = async (deployer, network, accounts) => {
     console.log('chainlinkVrfCoordinatorAddress', chainlinkVrfCoordinatorAddress);
   }
 
-  await deployer.deploy(LotteryContract, chainlinkPriceFeedContractAddress, chainlinkTokenAddress, chainlinkVrfCoordinatorAddress, globalVar.networks[network].chainlink_randomness_fee, globalVar.networks[network].chainlink_randomness_keyhash);
+  await deployer.deploy(LotteryContract, chainlinkPriceFeedContractAddress, chainlinkVrfCoordinatorAddress, chainlinkTokenAddress, globalVar.networks[network].chainlink_randomness_fee, globalVar.networks[network].chainlink_randomness_keyhash);
 
-  // const lotteryInstance = LotteryContract.deployed();
 }
