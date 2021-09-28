@@ -180,4 +180,13 @@ contract Lottery is VRFConsumerBase, Ownable {
     function getPlayers() public view returns (address payable[] memory) {
         return players;
     }
+
+    function withdrawLinkToken() public onlyOwner {
+        LINK.approve(address(this), LINK.balanceOf(address(this)));
+        LINK.transferFrom(
+            address(this),
+            owner(),
+            LINK.balanceOf(address(this))
+        );
+    }
 }

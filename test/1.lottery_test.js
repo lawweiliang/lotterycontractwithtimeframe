@@ -68,37 +68,6 @@ contract('Lottery', ([alice, bob, ali, admin]) => {
 
   describe('lotteryStart function test', () => {
 
-    /*     it.only('lotteryStart test - not enough link', async () => {
-    
-    
-          // await linkTokenInstance.approve(alice, 1000, { from: bob });
-          // await linkTokenInstance.transfer(alice, 1000);
-          // await linkTokenInstance.transfer(bob, 1000);
-          // await linkTokenInstance.transferFrom(bob, alice, 1000, { from: alice });
-    
-          // const balance = await linkTokenInstance.balanceOf(bob);
-          // console.log('balance', balance.toString());
-    
-    
-          // await linkTokenInstance.approve(alice, web3.utils.toWei('1', 'ether'), { from: alice });
-          // await linkTokenInstance.transferFrom(lotteryInstance.address, alice, web3.utils.toWei('1', 'ether'), { from: alice });
-    
-          // await linkTokenInstance.approve(alice, 1000);
-          // await lotteryInstance.returnLinkToken(alice);
-          // const balance = await linkTokenInstance.balanceOf(alice);
-          // console.log('balance', balance.toString());
-    
-    
-          // await linkTokenInstance.transferFrom(lotteryInstance.address, alice, web3.utils.toWei('1', 'ether'), { from: alice });
-          // expectRevert(lotteryInstance.lotteryStart(), 'Require Error: Smart Contract Not enough LINK - fill contract with link token');
-          // const linkBalance = await lotteryInstance.getLinkBalance();
-          // console.log('linkBalance', linkBalance.toString());
-          // const chainLinkFee = await lotteryInstance.getChainLinkFee();
-          // console.log('chainLinkFee', chainLinkFee.toString());
-    
-        }); */
-
-
     it('lotteryStart test - revert', async () => {
       await lotteryInstance.lotteryStart();
       expectRevert(lotteryInstance.lotteryStart(), 'Require Error: Current Lottery State is not clossing state');
@@ -134,6 +103,31 @@ contract('Lottery', ([alice, bob, ali, admin]) => {
       const winner = await lotteryInstance.getWinnerAddress();
       assert.equal(winner[winner.length - 1], bob);
     })
+  });
+
+
+  it.only('withdrawLink function test', async () => {
+
+    const aliceTokenBalanceBefore = await linkTokenInstance.balanceOf(alice);
+    console.log('aliceTokenBalanceBefore', aliceTokenBalanceBefore.toString());
+
+    const linkTokenBalanceBefore = await linkTokenInstance.balanceOf(lotteryInstance.address);
+    console.log('linkTokenBalanceBefore', linkTokenBalanceBefore.toString());
+
+    await lotteryInstance.withdrawLinkToken();
+
+    const linkTokenBalanceAfter = await linkTokenInstance.balanceOf(lotteryInstance.address);
+    console.log('linkTokenBalanceAfter', linkTokenBalanceAfter.toString());
+
+    const aliceTokenBalanceAfter = await linkTokenInstance.balanceOf(alice);
+    console.log('aliceTokenBalanceAfter', aliceTokenBalanceAfter.toString());
+
+    const linkTokenSupply = await linkTokenInstance.totalSupply();
+    console.log('linkTokenSupply', linkTokenSupply.toString());
+
+    assert.equal(linkTokenBalanceBefore, web3.utils.toWei('1', 'ether'));
+    assert.equal(linkTokenBalanceAfter.toString(), '0');
+    assert.equal(aliceTokenBalanceAfter.toString(), linkTokenSupply.toString());
   });
 
 });
